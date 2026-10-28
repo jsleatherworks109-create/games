@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Game Stash — a curated library of HTML games</title>
+<meta name="description" content="A clean, searchable stash of single-file HTML games. Pick a category, hit play, and the game opens right here.">
+<style>
+  :root{
+    --cream:#f2ebdf;
+    --cream-deep:#e9e0d0;
+    --paper:#fbf7ef;
+    --paper-2:#f6f0e6;
+    --ink:#211f1c;
+    --ink-2:#3a3631;
+    --muted:#6f675b;
+    --line:#ddd2c0;
+    --line-soft:#e7ddcd;
+    --shadow:0 1px 2px rgba(33,31,28,.05), 0 8px 24px -12px rgba(33,31,28,.25);
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:
+      radial-gradient(1200px 600px at 10% -10%, #fffaf1 0%, rgba(255,250,241,0) 60%),
+      radial-gradient(900px 500px at 110% 0%, #efe6d6 0%, rgba(239,230,214,0) 55%),
+      var(--cream);
+    color:var(--ink);
+    font-family:"Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size:15px;
+    line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  a{color:inherit}
+  ::selection{background:#e6d8bd; color:#211f1c}
+
+  /* ------------------------------------------------ shell */
+  .wrap{max-width:1240px; margin:0 auto; padding:0 22px}
+
+  header.top{
+    position:sticky; top:0; z-index:40;
+    background:rgba(242,235,223,.86);
+    backdrop-filter:blur(14px) saturate(1.05);
+    -webkit-backdrop-filter:blur(14px) saturate(1.05);
+    border-bottom:1px solid var(--line);
+  }
+  .top-inner{
+    display:flex; align-items:center; gap:26px;
+    padding:16px 0 15px;
+  }
+  .brand{display:flex; align-items:center; gap:12px; min-width:0}
+  .mark{
+    width:38px; height:38px; flex:0 0 auto;
+    border-radius:11px;
+    background:linear-gradient(160deg,#2b2823,#151311);
+    color:#f6efe2;
+    display:grid; place-items:center;
+    font-family:ui-serif, Georgia, "Times New Roman", serif;
+    font-size:19px; letter-spacing:.02em;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 6px 16px -8px rgba(0,0,0,.6);
+  }
+  .brand h1{
+    margin:0;
+    font-family:ui-serif, Georgia, "Times New Roman", serif;
+    font-weight:600;
+    font-size:21px;
+    letter-spacing:.01em;
+    white-space:nowrap;
+  }
+  .brand .sub{
+    margin:1px 0 0;
+    font-size:12px;
+    letter-spacing:.09em;
+    text-transform:uppercase;
+    color:var(--muted);
+    white-space:nowrap;
+  }
+
+  .search{
+    position:relative;
+    flex:1 1 auto;
+    min-width:180px;
+    max-width:560px;
+    margin-left:auto;
+  }
+  .search svg{
+    position:absolute; left:14px; top:50%; transform:translateY(-50%);
+    width:16px; height:16px; color:var(--muted); pointer-events:none;
+  }
+  #q{
+    width:100%;
+    padding:12px 44px 12px 39px;
+    border:1px solid var(--line);
+    border-radius:12px;
+    background:var(--paper);
+    color:var(--ink);
+    font:inherit;
+    font-size:14.5px;
+    outline:none;
+    transition:border-color .16s ease, box-shadow .16s ease, background .16s ease;
+  }
+  #q::placeholder{color:#9a9184}
+  #q:focus{
+    border-color:#c3b49b;
+    background:#fffdf8;
+    box-shadow:0 0 0 4px rgba(196,178,148,.22);
+  }
+  .kbd{
+    position:absolute; right:10px; top:50%; transform:translateY(-50%);
+    font-size:11px; color:var(--muted);
+    border:1px solid var(--line);
+    background:var(--paper-2);
+    padding:2px 6px; border-radius:6px;
+    letter-spacing:.06em;
+    pointer-events:none;
+    transition:opacity .15s ease;
+  }
+  #q:focus ~ .kbd, #q:not(:placeholder-shown) ~ .kbd{opacity:0}
+
+  /* ------------------------------------------------ categories */
+  .cats{
+    position:sticky; top:71px; z-index:35;
+    background:rgba(242,235,223,.92);
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--line);
+  }
+  .cats-scroll{
+    display:flex; gap:8px; align-items:center;
+    padding:12px 0;
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+  .cats-scroll::-webkit-scrollbar{display:none}
+  .chip{
+    flex:0 0 auto;
+    display:inline-flex; align-items:center; gap:8px;
+    padding:8px 13px;
+    border:1px solid var(--line);
+    background:var(--paper);
+    color:var(--ink-2);
+    border-radius:999px;
+    font:inherit; font-size:13px;
+    cursor:pointer;
+    white-space:nowrap;
+    transition:background .15s ease, color .15s ease, border-color .15s ease, transform .12s ease;
+  }
+  .chip:hover{border-color:#c9bba3; transform:translateY(-1px)}
+  .chip .n{
+    font-size:11px;
+    color:var(--muted);
+    font-variant-numeric:tabular-nums;
+    transition:color .15s ease;
+  }
+  .chip[aria-pressed="true"]{
+    background:var(--ink);
+    border-color:var(--ink);
+    color:#f7f1e5;
+  }
+  .chip[aria-pressed="true"] .n{color:#bfb6a6}
+
+  /* ------------------------------------------------ header meta */
+  .lede{
+    display:flex; align-items:baseline; justify-content:space-between;
+    gap:16px; padding:26px 0 16px;
+  }
+  .lede h2{
+    margin:0;
+    font-family:ui-serif, Georgia, "Times New Roman", serif;
+    font-weight:500;
+    font-size:17px;
+    color:var(--ink-2);
+  }
+  .lede h2 em{font-style:normal; color:var(--muted)}
+  .lede p{margin:0; font-size:12.5px; color:var(--muted); letter-spacing:.02em}
+
+  /* ------------------------------------------------ grid */
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(196px, 1fr));
+    gap:16px;
+    padding-bottom:8px;
+  }
+  .card{
+    position:relative;
+    display:flex; flex-direction:column;
+    text-align:left;
+    padding:0;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:var(--paper);
+    cursor:pointer;
+    overflow:hidden;
+    font:inherit; color:inherit;
+    transition:transform .16s ease, box-shadow .2s ease, border-color .16s ease;
+  }
+  .card:hover{
+    transform:translateY(-3px);
+    border-color:#c9bba3;
+    box-shadow:var(--shadow);
+  }
+  .card:focus-visible{outline:2px solid #8a7a60; outline-offset:2px}
+  .thumb{
+    position:relative;
+    aspect-ratio:16/10;
+    display:grid; place-items:center;
+    background:var(--tint, #e7dcc9);
+    border-bottom:1px solid var(--line-soft);
+    overflow:hidden;
+  }
+  .thumb::after{
+    content:"";
+    position:absolute; inset:0;
+    background:
+      radial-gradient(120% 90% at 15% 0%, rgba(255,255,255,.7), rgba(255,255,255,0) 55%),
+      repeating-linear-gradient(135deg, rgba(33,31,28,.045) 0 1px, transparent 1px 9px);
+    opacity:.9;
+  }
+  .thumb svg{position:relative; z-index:1; display:block; width:100%; height:100%}
+  .thumb img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:1}
+  .thumb .mono{
+    font-family:ui-serif, Georgia, "Times New Roman", serif;
+    font-size:30px; letter-spacing:.03em;
+    fill:#26231f; fill-opacity:.74;
+  }
+  .card-body{padding:12px 13px 13px; display:flex; flex-direction:column; gap:5px; min-height:74px}
+  .name{
+    font-size:14px; font-weight:550; line-height:1.3;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    overflow:hidden;
+    letter-spacing:-.005em;
+  }
+  .tag{
+    margin-top:auto;
+    font-size:11px; letter-spacing:.07em; text-transform:uppercase;
+    color:var(--muted);
+  }
+  .card .play{
+    position:absolute; top:9px; right:9px;
+    width:26px; height:26px; border-radius:50%;
+    display:grid; place-items:center;
+    background:rgba(251,247,239,.86);
+    border:1px solid rgba(33,31,28,.14);
+    color:var(--ink);
+    opacity:0; transform:scale(.85);
+    transition:opacity .16s ease, transform .16s ease;
+    z-index:2;
+  }
+  .card:hover .play{opacity:1; transform:scale(1)}
+
+  .more-wrap{display:flex; justify-content:center; padding:26px 0 8px}
+  #more{
+    padding:11px 22px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:var(--paper);
+    color:var(--ink);
+    font:inherit; font-size:13.5px;
+    cursor:pointer;
+    transition:background .15s ease, border-color .15s ease, transform .12s ease;
+  }
+  #more:hover{background:#fffdf8; border-color:#c9bba3; transform:translateY(-1px)}
+  #more[hidden]{display:none}
+
+  .empty{
+    padding:70px 20px 90px;
+    text-align:center;
+    color:var(--muted);
+  }
+  .empty strong{
+    display:block;
+    font-family:ui-serif, Georgia, serif;
+    font-size:19px; font-weight:500; color:var(--ink-2); margin-bottom:6px;
+  }
+  .empty[hidden]{display:none}
+
+  footer{
+    margin-top:44px;
+    border-top:1px solid var(--line);
+    background:rgba(251,247,239,.5);
+  }
+  .foot-inner{
+    display:flex; flex-wrap:wrap; gap:20px 40px; justify-content:space-between;
+    padding:26px 0 38px;
+    font-size:12.5px; color:var(--muted);
+  }
+  .foot-inner p{margin:0 0 6px; max-width:60ch}
+  .foot-inner strong{color:var(--ink-2); font-weight:550}
+  .foot-links{display:flex; gap:16px; flex-wrap:wrap}
+  .foot-links a{text-decoration:none; border-bottom:1px solid var(--line); padding-bottom:1px}
+  .foot-links a:hover{border-color:#b8a88d; color:var(--ink)}
+
+  /* ------------------------------------------------ player */
+  .player{
+    position:fixed; inset:0; z-index:100;
+    display:flex; flex-direction:column;
+    background:var(--cream);
+    opacity:0; pointer-events:none;
+    transition:opacity .18s ease;
+  }
+  .player.open{opacity:1; pointer-events:auto}
+  .player-bar{
+    display:flex; align-items:center; gap:14px;
+    padding:11px 18px;
+    border-bottom:1px solid var(--line);
+    background:var(--paper);
+    flex:0 0 auto;
+  }
+  .icon-btn{
+    display:inline-flex; align-items:center; gap:7px;
+    padding:8px 13px;
+    border:1px solid var(--line);
+    background:var(--paper-2);
+    color:var(--ink);
+    border-radius:10px;
+    font:inherit; font-size:13px;
+    cursor:pointer;
+    white-space:nowrap;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .icon-btn:hover{background:#fffdf8; border-color:#c9bba3}
+  .icon-btn.primary{background:var(--ink); color:#f7f1e5; border-color:var(--ink)}
+  .icon-btn.primary:hover{background:#2f2b26; border-color:#2f2b26}
+  .p-title{min-width:0; line-height:1.25}
+  .p-title b{
+    display:block;
+    font-family:ui-serif, Georgia, serif;
+    font-weight:600; font-size:16px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .p-title span{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+  .p-actions{margin-left:auto; display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end}
+  .stage{
+    position:relative; flex:1 1 auto; background:#14120f;
+  }
+  .stage iframe{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    border:0; background:#14120f;
+    opacity:0; transition:opacity .25s ease;
+  }
+  .stage iframe.ready{opacity:1}
+  .loader{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:14px;
+    color:#cfc6b6;
+    background:#14120f;
+    font-size:13px; letter-spacing:.06em; text-transform:uppercase;
+    text-align:center;
+    padding:26px;
+    z-index:2;
+  }
+  .loader[hidden]{display:none}
+  .spinner{
+    width:26px; height:26px; border-radius:50%;
+    border:2px solid rgba(246,239,226,.22);
+    border-top-color:#f6efe2;
+    animation:spin .9s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loader .err{
+    text-transform:none; letter-spacing:0;
+    font-size:13.5px; line-height:1.6; color:#e8dfd0;
+    max-width:46ch;
+  }
+  .loader .err a{color:#f6efe2; border-bottom:1px solid #7a7268; text-decoration:none}
+  .loader .row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center}
+  body.locked{overflow:hidden}
+
+  @media (max-width:820px){
+    .top-inner{flex-wrap:wrap; gap:12px; padding:13px 0}
+    .brand h1{font-size:19px}
+    .brand .sub{display:none}
+    .search{max-width:none; order:3; flex-basis:100%; margin-left:0}
+    .cats{top:auto; position:sticky}
+    .grid{grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:12px}
+    .thumb span{font-size:24px}
+    .card-body{padding:10px 11px 11px; min-height:68px}
+    .name{font-size:13px}
+    .player-bar{padding:9px 12px; gap:9px}
+    .p-actions .label{display:none}
+    .icon-btn{padding:8px 10px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:.01ms !important; transition-duration:.01ms !important}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top-inner">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">GS</div>
+      <div>
+        <h1>The Game Stash</h1>
+        <p class="sub" id="brandSub">A stash of HTML games</p>
+      </div>
+    </div>
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path>
+      </svg>
+      <input id="q" type="search" placeholder="Search games…" autocomplete="off" spellcheck="false"
+             aria-label="Search games" enterkeyhint="search">
+      <span class="kbd">/</span>
+    </div>
+  </div>
+  <div class="cats">
+    <div class="wrap cats-scroll" id="cats" role="toolbar" aria-label="Categories"></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="lede">
+    <h2 id="ledeTitle">All games <em id="ledeCount"></em></h2>
+    <p id="ledeHint">Pick a game — it opens right here</p>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="more-wrap"><button id="more" hidden>Load more games</button></div>
+  <div class="empty" id="empty" hidden>
+    <strong>Nothing in the stash matches that.</strong>
+    Try a different word, or clear the search to browse everything.
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <div>
+      <p><strong>The Game Stash</strong> is just a door: every title here is a single-file HTML game hosted by its own project. Nothing is re-hosted on this page, and all rights stay with their owners.</p>
+      <p>Catalog compiled from the <strong>Ultimate Game Stash</strong> library — credit to its curator. If you paid for this page, you were scammed; it is free.</p>
+    </div>
+    <div class="foot-links">
+      <a href="https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/" target="_blank" rel="noopener">Source document</a>
+      <a href="https://discord.gg/rmVsAqkpkA" target="_blank" rel="noopener">Community Discord</a>
+      <a href="#top" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">Back to top</a>
+    </div>
+  </div>
+</footer>
+
+<div class="player" id="player" role="dialog" aria-modal="true" aria-label="Game player">
+  <div class="player-bar">
+    <button class="icon-btn" id="back">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      <span class="label">Back</span>
+    </button>
+    <div class="p-title">
+      <b id="pName">Game</b>
+      <span id="pCat">Category</span>
+    </div>
+    <div class="p-actions">
+      <button class="icon-btn" id="reload" title="Reload game">Reload</button>
+      <button class="icon-btn" id="full" title="Fullscreen">Fullscreen</button>
+      <button class="icon-btn primary" id="newtab" title="Open in a new tab">New tab</button>
+    </div>
+  </div>
+  <div class="stage" id="stage"></div>
+</div>
+
+<script>
+/* ---------------------------------------------------------------- data */
+const CATS = ["Rhythm & Music","Horror & Survival","Shooter","Fighting","Racing & Driving","Sports","Platformer","Puzzle","Idle & Clicker","Simulation","Strategy","Adventure & RPG","Board & Card","Sandbox & Building","Multiplayer & Party","Arcade","Action","More Games"];
+const GAMES = [["A Dance of Fire and Ice","clADOFAI.html",0],["A Dark Room","clADarkRoom.html",11],["A Date With Death","cladatewithdeath.html",11],["A Day In The Office","cladayintheoffice.html",11],["A Small World Cup","clasmallworldcup.html",5],["Advent Neon","cladventneon.html",17],["Adventure Capitalist","clAdventureCapatalist.html",8],["Agar.io Lite","clagariolite.html",15],["Ages of Conflict","clagesofconflict.html",10],["Ahoy Survival","clahoysurvival.html",1],["Airline Tycoon Idle","clairlinetycoonidle.html",8],["Alien Sky Invasion","clalienskyinvasion.html",16],["Allocation","clallocation.html",17],["Also Steal A Brainrot","clbrainrot.html",7],["Also Tag","cltagc3.html",14],["Alt Snow Rider","clsnowriderrrr.html",4],["Amazing Strange Rope Police","clstreangeropepolice.html",16],["Amidst The Sky","clamidstthesky.html",17],["Among Us","clamongus.html",14],["Amorphous +","clamorphous.html",7],["Ancient Sins","clancientsins.html",17],["Angry Birds","clangrybirds.html",7],["Angry Birds Showdown","clangrybirdsshowdown.html",7],["Another Steal a Brainrot","clstealbrainrot.html",7],["Ant Art Tycoon","clantarttycoon.html",8],["Antimatter Dimensions","clantimatterdimensions.html",8],["Apes vs. Helium","clapesvshelium.html",16],["Aquapark.io","claquaparkio.html",14],["Archery World Tour","clarcheryworldtour.html",5],["Archesspelago","clarchesspelago.html",12],["Arsonate","clarsonate.html",16],["Arthur’s Nightmare","clarthursnightmare.html",1],["As Duty Demands","clasdutydemands.html",16],["Ascent","clascent.html",15],["Assessment Examination","classesmentexaminationque.html",17],["Asteroids","clasteroidsALT.html",15],["Aviamasters","claviamastersbuggy.html",17],["Babel Tower","clbabeltower.html",7],["Baby Chicco Adventure","clbabychiccoadventure.html",11],["Baby Sniper In Vietnam","clbabysniperinvietnam.html",2],["Backrooms","clbackrooms.html",1],["Backrooms 2D","clbackrooms2D.html",1],["Bacon May Die","clbaconmaydie.html",16],["Bad Bodyguards","clbadbodyguards.html",16],["Bad Monday Simulator","clbadmondaysimulator.html",9],["Bad Parenting","clbadparenting.html",9],["Bad Piggies (LATEST)","clbadpiggieslatest.html",7],["Bad Time Simulator","clbadtimesim.html",9],["Baldi's Basics The Ultra Decompile","clbaldidecomp.html",1],["Baldi’s Basics","clbaldisbasics.html",1],["Baldi’s Basics Remastered","clbaldisbasicsremaster.html",1],["Baldi’s Fun New School Ultimate","clbaldisfunnewschoolultimate.html",9],["Ball Blast","clballblast.html",15],["Ballistic","clballistic.html",2],["Balls And Bricks","clballsandbricksgood.html",15],["BallZ","clballz.html",15],["Banana Simulator","clbananasimulator.html",9],["Bank Robbery 1","clBank Robbery.html",16],["Bank Robbery 2","clbankrobbery2.html",16],["Barry Has a Secret","clbarryhasasecret.html",17],["Bart Blast (made by Epick)","clbartblast.html",16],["BAS","clbas.html",17],["Baseball Bros","clbaseballbros.html",5],["Basket Battle","clbasketbattle.html",5],["Basket Bros","clbasketbros.html",5],["Basket Random","clbasketrandom.html",5],["Basket Slam Dunk 2","clbasketslamdunk2.html",5],["Basketball FRVR","clbasketballfrvr.html",5],["Basketball Legends 2020","clbasketballlegends.html",5],["Basketball Stars","clbasketballstars.html",5],["Basketball Superstars","clbasketballsuperstars.html",5],["Batter Up","clbatterup.html",5],["Battle Karts","clbattlekarts.html",4],["Battle Simulator","clbattlesim.html",9],["Battles","clbattles.html",10],["Beach Boxing Simulator","clbeachboxingsim.html",9],["Bearsus","clbearsus.html",16],["BERGENTRUCK 201x","clbergentruck201x.html",4],["Better Tunnel Rush","cltunnelrushbetter.html",4],["BFDI Branches","clBFDIBranches.html",17],["BFDIA 5b","clbfdia5b.html",17],["Big Flappy Tower Tiny Square","clbigflappytowertinysquare.html",15],["Big Ice Tower Tiny Square","clbigicetowertinysquare.html",6],["Big Neon Tower Tiny Square","clbigneontowertinysquare.html",6],["Big Shot Boxing","clbigshotboxing2.html",5],["Big Tower Tiny Square","clbtts.html",6],["Big Tower Tiny Square 2","clbtts2.html",6],["Bio Evil 4","clbioevil4.html",1],["Bit Planes","clbitplanes.html",15],["Bitlife","clbitlife.html",9],["Blackjack","clblackjackhhhh.html",12],["Blastronaut","clblastronaut.html",16],["Blaze Drifter","clblazedrifter.html",4],["Blightborne","clblightborne.html",11],["Block Blast","clblockblast.html",7],["Block Blast 2","clblockblastv2.html",7],["Block the Pig","clblockthepig.html",7],["Blockpost","clblockpost.html",7],["Blocky Demolition Derby","clblockydemolitionderby.html",4],["Blocky Snakes","clblockysnakes.html",7],["Blood Tournament","clbloodtournament.html",16],["Bloodmoney","clbloodmoney.html",16],["Blumgi Racers","clblumgiracers.html",4],["Blumgi Rocket","clblumgirocket.html",15],["Bob the Robber 2","clbobtherobber2.html",16],["Bob the Robber 5","clbobtherobber5.html",16],["Boba Simulator","clbobasimulator.html",9],["Boom Slingers","clboomslingers.html",14],["Bottle Cracks","clbottlecracks.html",7],["Bounce Back","clbounceback.html",15],["Bouncemasters","clbouncemasters.html",15],["Bouncy Basketball","clbouncybasketball.html",5],["Bouncy Motors","clbouncymotors.html",4],["Bounty of One","clBountyOfOne.html",16],["Bowmasters","clbowmaster.html",16],["Boxing Random","clboxingrandom.html",5],["Brawl Simulator 3D","clbrawlsimulator3d.html",9],["Breadskate Forever","clbreadskate.html",5],["Bridge Race","clbridgerace.html",4],["Brotato","clbrotato.html",1],["BTD6 (scratch)","clbloonsTD6scratch.html",10],["BuildNow.GG","clbuildnowgg.html",13],["Bunnyland","clbunnyland.html",1],["Burger and Frights","clburgerandfrights.html",1],["Burrito Bison Launcha Libre","clburritobisonlaunchalibre.html",15],["Buster Jam","clBusterJam.html",6],["C.S 1.6","clcs16.html",2],["Call of Battle","clcallofbattle.html",2],["Candy Box 1","clcandybox1.html",8],["Cannon Balls 3D","clcannonballs3d.html",15],["CaptchaWare","clcaptchaware.html",7],["Capybara Clicker","clcapybaraclicker.html",8],["Car Crash 3","clcarcrash3.html",4],["Car Drawing","clcardrawing.html",13],["Car King Arena","clcarkingarena.html",3],["Car Ramp Vs Police Chase","clcarrampvspolicechase.html",16],["Cartoon Network Table Tennis Ultimate Tournament","clCartoonNetworkTableTennisUltimateTournament.html",5],["CaseOh's Basics in Eating and Fast Food","clbaldicaseoh.html",1],["Castle Wars Modern","clcastlewarsmodern.html",6],["Cat Mario","clcatmario.html",6],["Cats Love Cake 2","clcatslovecake2.html",17],["Cave Crawler","clcavecrawler.html",17],["Cave Story","clcavestory.html",11],["Celeste 2","clceleste2.html",6],["Celeste Pico","clceleste.html",6],["Cell to Singularity","clCellToSingularity.html",8],["Chaos Faction 2","clchaosfaction2.html",16],["Cheese Chompers 3D","clcheesechompers3d.html",17],["Cheese Is The Reason","clcheeseisthereason.html",17],["Cheese Rolling","clcheeserolling.html",5],["Cheshire In a Chatroom","clcheshireinachatroom.html",11],["Chess Classic","clchessclassic.html",12],["Chicken Scream","clchickenscream.html",9],["ChickenCS","clChickenCS.html",2],["Chickenwar","clchickenwar.html",16],["Choppy Orc","clchoppyorc.html",6],["CircloO 2","clCircloO2.html",7],["Civiballs","clciviballs.html",7],["Civiballs 2","clciviballs2.html",7],["Clash Of Vikings","clclashofvikings.html",10],["Class of ‘09","clclassof09.html",11],["Cleanup.io","clcleanupio.html",14],["Cluster Rush","clclusterrush.html",6],["Coal LLC","clcoalllcdemo.html",8],["Coffee Maker","clcoffeemaker.html",13],["Cold Pines","clcoldpines.html",1],["Combo Pool","clcombopool.html",5],["Command and Conquer Red Alert","clredalert.html",10],["Command and Conquer Tiberian Dawn","cltiberiandawn.html",10],["Cookie Clicker","clcookieclicker.html",8],["Cookie Clicker Mod Menu","clcookieclickermodmenu.html",8],["Core Ball","clcoreball.html",15],["Count Masters: Stickman Games","clcountmastersstickmangames.html",3],["Crank It!","clcrankit!.html",8],["Crazy Cars","clcrazycars.html",4],["Crazy Cattle 3D","clcrazycattle3d.html",13],["Crazy Chicken 3D","clcrazychicken3D.html",15],["Crazy Crash Landing","cldubstep.html",15],["Crazy Motorcycle","clcrazymotorcycle.html",4],["Crazy Plane Landing","clcrazyplanelanding.html",15],["Creature Card Idle","clcreaturecardidle.html",8],["Crossy Road","clcrossyroad.html",15],["Csgo Clicker","clcsgoclicker.html",8],["Curse of the Lich King","clcotlk.html",11],["Customer Support","clcustomersupport.html",9],["Cut the Rope","clcuttherope.html",7],["Cyberbung Racing","clcyberbungracing.html",4],["Dadish","cldadish.html",6],["Dandy's World Clicker","cldandysworldclicker.html",8],["Dank Tomb","cldanktomb.html",17],["Dash Arena","cldasharena.html",3],["Dash Party","cldashio.html",14],["Date With Iraq","cldatewithiraq.html",9],["Dead Estate","cldeadestate.html",1],["Dead Plate","cldeadplate.html",1],["Dead Seat","cldeadseat.html",1],["Deadly Descent","cldeadlydescent.html",16],["Death Chase","cldeathchase.html",16],["Death Run","cldeathrun.html",6],["Deepest Sword","cldeepestsword.html",16],["Deltarune","cldeltarune.html",11],["Deltatraveler","cldeltatraveler.html",11],["Demolition Derby Crash Racing","cldemolitionderbycrashracing.html",4],["Demon Bluff","cldemonbluff.html",1],["Die in the Dungeon","cldieinthedungeon.html",11],["Dimensional Incident","cldimensionalincident.html",17],["Dire Decks","cldiredecks.html",12],["Doblox","cldoblox.html",13],["Doge Miner","cldogeminer.html",8],["Doge Miner 2","cldogeminer2.html",8],["Doki Doki Literature Club","cldokidokiliteratureclub.html",1],["Dome Romantik","cldomeromantik.html",16],["Doodle Jump","cldoodlejumpgoober.html",6],["Doom But It’s Half Life 2","clhl2doom.html",2],["Doom Emscripten","cldoomemscripten.html",2],["Doomz.io","cldoomzio.html",2],["Doors Castle","cldoorscastle.html",6],["Double Barrel Sniper","cldbsniper.html",2],["Dr. Weed Gaster","cldrweedgaster.html",11],["Draw Climber","cldrawclimber.html",15],["Draw the Line","cldrawtheline.html",17],["Dreader","cldreader.html",1],["Dreadhead Parkour","cldreadheadparkour.html",6],["Drift Boss","cldriftboss.html",4],["Drift Hunters","cldrifthuntersmerge.html",4],["Drift Simulator","cldriftsimulator.html",9],["Drive In Russia","cldriverussia.html",4],["Drive Mad","cldrivemady.html",4],["Driven Wild","cldrivenwild.html",4],["DTA 6","cldta6.html",17],["Duck Life Battle","clducklifebattle.html",9],["Duck Life Space","clducklifespace.html",9],["Ducklings.io","clducklingsio.html",14],["DUD","cldud.html",17],["Duke Nukem 2","cldukenukem2.html",2],["Duke Nukem 3D","cldukenukem3d.html",2],["Dumb Ways to Die","cldumbwaystodie.html",9],["Dungeon Deck","cldungeondeck.html",11],["Dungeon Raid","cldungeonraid.html",11],["Dungeons And Degenerate Gamblers","cldungeonsanddegenerategamblers.html",11],["Dunk Shot","cldunkshot.html",5],["Dusk Child","clduskchild.html",17],["Dying Dreams","cldyingdreams.html",1],["Eagle Ride","cleagleride.html",15],["Edelweiss","cledelweiss.html",17],["Edy’s Car Simulator","cledyscarsimulator.html",9],["Effing Hail","cleffinghail.html",17],["Egg","clegg.html",15],["Eggy Car","cleggycar.html",4],["Elastic Face","clelasticface.html",13],["Elytra Flight","clelytraflight.html",15],["Enchain","clenchain.html",17],["Endacopia","clendacopia.html",1],["Escalating Duel","clescalatingduel.html",3],["Escape Road","clescaperoad.html",16],["Escape Road City 2","clescaperoadcity2.html",16],["Escape School Duel","clescapeschoolduel.html",9],["Euroaural Song Contest 2D","cleurovisionsim.html",0],["Evil Glitch","clevilglitch.html",16],["Evolution","clevolution.html",8],["Exoplanet Observation","clexoobservation.html",17],["Fall Guys","clfallguys.html",14],["Fashion Battle","clfashionbattle.html",13],["Fear Assessment (DEMO)","clfearassessment.html",17],["Fears to Fathom: Home Alone","clfearstofathomhomealone.html",1],["Feed The Void","clfeedthevoid.html",7],["Final Earth 2","clfinalearth2.html",10],["Find The Alien","clfindthealien.html",16],["Fireblob","clfireblob.html",7],["Fireboy and Watergirl 2","clfireboyandwatergirl2.html",7],["Fireboy and Watergirl 3","clfireboyandwatergirl3.html",7],["Fish Eat Getting Big","clfisheatgettingbig.html",15],["Fisquarium","clfisquarium.html",9],["Five Nights at Baldis Redone","clfivenightsatbaldisredone.html",1],["Five Nights at Candy’s 1","clfnac1.html",1],["Five Nights at Candy’s 2","clfnac2.html",1],["Five Nights At Shrek’s Hotel","clfivenightsatshreks.html",1],["Five Nights at Winston's","clfnaw.html",1],["Five Nights At Yoshi’s","clfivenightsatyoshis.html",1],["Fluidism","clfluidism.html",7],["FNAF","clFNAF.html",1],["FNAF 2","clFNAF2.html",1],["FNAF 3","clFNAF3.html",1],["FNAF 3 Remastered","clfnaf3remastered.html",1],["FNAF 4","clFNAF4.html",1],["FNAF 4 Halloween","clfnaf4halloween.html",1],["FNAF Pizzeria Simulator","clfnafps.html",9],["FNAF Shooter","clfnafshooter.html",2],["FNAF Sister Location","clfnafsl.html",1],["FNAF Ultimate Custom Night","clfnafucn.html",1],["FNAF World","clfnafworldd.html",1],["Folder Dungeon","clfolderdungeon.html",11],["Football Bros","clfootballbros.html",5],["Football Legends","clfootballlegends.html",5],["Fork n Sausage","clforknsausage.html",7],["Fortzone Battle Royale","clfortzone.html",2],["Freegemas","clfreegemas.html",7],["From Rust To Ash","clfromrusttoash.html",11],["Fruit Ninja","clfruitninja.html",15],["Funny Battle Simulator","clfunnybattle.html",9],["Funny Battle Simulator 2","clfunnybattle2.html",9],["Funny Mad Racing","clfunnymadracing.html",4],["Funny Shooter 2","clfunnyshooter22.html",2],["Fused 240","clfused240.html",17],["Generic Fighter Maybe","clgenericfightermaybe.html",3],["Geometry Dash Lite","clgdlite.html",6],["Geometry Dash Scratch","clgeometrydashscratch.html",6],["Geometry Vibes","clgeometryvibes.html",15],["George And The Printer","clgeorgeandtheprinter.html",17],["Get On Top","clgetontop.html",3],["Get Yoked","clgetyoked.html",5],["Getaway Shootout","clgetawayshootout.html",2],["Gimme the Airpod","clgimmietheairpod.html",17],["Gladihoppers","clgladdihoppers.html",3],["GLFighters","clglfighters.html",3],["Glory Hunters","clgloryhunters.html",10],["Go to bed","clgotobed.html",9],["Gobble","clgobble.html",15],["Going Balls","clgoingballs.html",15],["Gold Digger FRVR","clgolddiggerfrvr.html",15],["Gold Miner","clgoldminer.html",8],["Golf Battle","clgolfbattle.html",5],["Golf Sunday","clgolfsunday.html",5],["Google Baseball","clgooglebaseball.html",5],["Google Dino","clgoogledino.html",15],["Gorescript Classic","clgorescriptclassic.html",2],["Gorilla Tag","clgorillatag.html",14],["Grand Action Simulator: New York","clgrandactionsimulator-ny.html",9],["Grand Escape Prison","clgrandescapeprison.html",16],["Granny","clgrannyy.html",1],["Granny 2","clgranny22.html",1],["Granny 3","clgranny3.html",1],["Granny Creepy","clgrannycreepy.html",1],["Granny Nightmare","clgrannynightmare.html",1],["Granny Online","clgranny2.html",1],["Gravity","clgravity.html",16],["Gravity Mod","clgravitymod.html",16],["Greener Grass Awaits","clgreenergrassawaits.html",17],["Grey Box Testing","clgrey-box-testing.html",17],["Grindcraft","clgrindcraft.html",13],["GRN","clgrn.html",17],["Grow A Garden","clgrowagarden.html",13],["Grow Your Garden","clgrowyourgarden.html",9],["Growden.io","clgrowdenio.html",14],["Growmi","clgrowmi.html",7],["GTA Mods","clgtamods.html",13],["Guess Their Answer","clguesstheiranswer.html",14],["Gun Knight","clgunknight.html",2],["Gun Night","clgunnight.html",2],["Gun Spin","clgun-spin.html",2],["Guncho","clguncho.html",2],["Gym Stack","clgymstack.html",7],["Half Life","clhalflife.html",2],["Handshakes","clhandshakes.html",14],["Handulam+","clhandulum.html",12],["Hanger 2","clhanger2.html",15],["Happy Room","clhappyroom.html",13],["Hardware Tycoon","clhardwaretycoon.html",8],["Harold's Bad Day","clHaroldsbadday.html",17],["Harvest.io","clharvestio.html",14],["Haunted School","clhauntedschool.html",9],["HEI$T","clhei$t.html",16],["Helix Jump","clhelixjump.html",6],["HellroN","clhellron.html",16],["Help No Brakes!","clhelpnobrakes.html",15],["Hero 3: Flying Robot","clhero3flyingrobot.html",15],["Hextris","clhextris.html",7],["Hi No Homo","clHiNoHomo.html",0],["High Stakes","clhighstakes.html",12],["Highway Racer","clhighwayracer2.html",4],["Hill Climb Racing Lite","clhillclimbracinglite.html",4],["HIT8OX","clhit8ox.html",17],["HitStunFly","clhitstunfly.html",17],["Hole.io","clholeio.html",14],["HoleBattle","clholebattle.html",15],["Hot Wax","clhotwax.html",16],["House of Hazards","clhouseofhazards.html",14],["Hover Racer Drive","clhoverracerdrive.html",4],["Huggy Wuggy Pixel","clhuggywuggypixel.html",1],["Human Expenditure Program","clhumanexpenditureprogram.html",13],["Hungry Knight","clhungryknight.html",16],["Hungry Lamu","clhungrylamu.html",17],["Hypper Sandbox","clhyppersandbox.html",13],["I Wanna Be The Guy","cliwbtg.html",6],["Ice Dodo","clicedodo.html",6],["Ice Fishing","clicefishing.html",5],["Icy Purple Head","clicypurplehead.html",7],["Idle Breakout","clidlebreakout.html",8],["Idle Dice","clidledice.html",8],["Idle Football Manager","clidlefootballmanager.html",5],["Idle Idle Game Dev","clidleidlegamedev.html",8],["Idle Miner Tycoon","clidleminertycoon.html",8],["Indian Truck Simulator","cltrucksim.html",9],["Infinite Craft","clinfinitecraft.html",13],["Ink Game","clinkgame.html",17],["Insomniary","clinsomniary.html",1],["Intellisphere","clintellisphere.html",17],["Into Ruins","clintoruins.html",1],["Into The Deep Web","clintothedeepweb.html",11],["Iron Snout","clironsnout.html",16],["Irori","clirori.html",2],["It Gets So Lonely Here","clitgetssolonelyhere.html",17],["Jailbreak Obby","cljailbreakobbbobob.html",6],["Jazz Jackrabbit","cljazzjackrabbit.html",6],["Jazz Jackrabbit 2","cljazzjackrabbit2.html",6],["Jefflings","cljefflings.html",17],["Jelly Drift","cljellydrift.html",4],["Jelly Mario","cljellymario.html",6],["Jelly Truck","cljellytruckgood.html",4],["Jet Rush","cljetrush.html",15],["Jetpack Joyride","cljetpackjoyride.html",2],["Jetski Race","cljetskiracing.html",4],["Johnny Trigger","cljohnnytrigger.html",16],["Johnny Upgrade","cljohnnyupgrade.html",16],["Journey Downhill","cljourneydownhill.html",11],["Jsvecx","cljsvecx.html",17],["Jumbo Mario","cljumbomario.html",6],["Jumping Shell","cljumpingshell.html",6],["Jungle Deer Hunting","cljungledeerhunting.html",2],["Just Hit The Button","cljusthitthebutton.html",8],["Just One Boss","cljustoneboss.html",16],["Justfall.lol","cljustfalllol.html",14],["Kalikan","clkalikan.html",16],["Kanye Zone","clkanyezone.html",15],["Karate Bros","clkaratebros.html",3],["Karlson","clkarlson.html",2],["Kart Bros","clkartbros.html",4],["Kill The Ice Age Baby Adventure","clkilltheiceagebabyadventure.html",11],["Killover","clkillover.html",16],["Kim Jong Un Tile Puzzle","clkimjonguntilepuzzle.html",7],["Kirby ~ Soft and Wet","clkirbysoftandwet.html",6],["Klifur","clklifur.html",15],["Konkr.io","clkonkrio.html",14],["Kour.io","clkourio.html",14],["KS2 Teams","clks2teams.html",10],["Lacey’s Flash Games","cllaceysflashgames.html",13],["Last Horizon","cllasthorizon.html",15],["Leader Strike","clleaderstrike.html",16],["Leap And Avoid 2","clleapandavoid2.html",6],["Let It Consume","clletitconsume.html",1],["Level Devil","clleveldevil.html",6],["Level Up - Mario Minigames Mayhem","cllummm.html",6],["Lever Warriors","clleverwarriors.html",17],["Little Alchemy 2","cllittlealchemy2.html",7],["Little Runmo","cllittlerunmo.html",6],["Lock the Door","cllockthedoor.html",1],["Low Knight","cllowknight.html",6],["Lucky Blocks Obby","cluckyblockobbyEUOPHRATESRIVER.html",7],["Mad Skills Motocross 2","clmadskillsmotocross2.html",4],["Mad Stick","clmadstick.html",3],["Madalin Stunt Cars 2","clmadstuntcars2.html",4],["Madalin Stunt Cars Multiplayer","clmadalinstuntcarsmultiplayerfixed.html",14],["Madness 2010","clmadnesss2010.html",16],["Madness The Stand","clmadnessstand.html",16],["Mage Tower Idle Defense","clmagetoweridle.html",8],["Make Sure Its Closed","clmakesureitsclosed.html",1],["Mana God","clmanagod.html",11],["Marble Racer","clmarbleracer.html",4],["Mari0","clmari0.html",6],["Mario VS Luigi Online","clmariovsluigi.html",6],["Masked Forces Unlimited","clmaskedforcesunlimited.html",2],["Medal Of Honor","clmedalofhonor.html",2],["Megachess","clmegachess.html",12],["Melon Playground","clmelonplayground.html",13],["Merge Round Racers","clmergeroundracers.html",7],["Mimic","clmimic.html",1],["Mindwave","clmindwave.html",17],["Mine Shooter","clmineshooter.html",2],["Minecraft Case Sim","clminecraftcasesim.html",13],["Minecraft Parkour","clblockcraftparkour.html",13],["Minecraft Pocket Edition","clminecraftpocketedition.html",13],["Minecraft Shooter","clblockcraftshooter.html",2],["Minesweeper Plus","clminesweeperplus.html",7],["Mini Crossword","clminicrossword.html",16],["Mini Flips","clminiflips.html",15],["Mini Shooters","clminishooters.html",2],["Mini Tooth","clminitooth.html",7],["Mom I’m Sleeping","clmomimsleeping.html",1],["Money Rush","clmoneyrush.html",8],["Monkey Mart","clmonkeymart.html",9],["Monster Derby","clmonsterderby.html",3],["Monster Tracks","clmonstertracks.html",17],["Monster Truck Port Stunt","clmonstertruckportstunt.html",4],["Moto Road Rash","clmotoroadrash.html",4],["MotoX3m","clmotox3mm.html",4],["MotoX3m Pool Party","clmotox3mpoolparty.html",14],["MotoX3m Spooky Land","clmotox3mspookyland.html",4],["MotoX3m Winter","clmotox3mwinter.html",4],["MotoX3m2","clmotox3m2.html",4],["MotoX3m3","clmotox3m3.html",4],["Mountain Bike Racer","clmountainbikeracer.html",4],["Mr Mine","clmrmine.html",8],["Mr. Racer - Car Racing","clmrracer.html",4],["MX Offroad Master","clmxoffroadmaster.html",4],["My Teardrop","clmyteardrop.html",17],["N-gon","clngon.html",6],["Nazi Zombies Portable (nzp)","clnzp.html",1],["Neon Blaster","clneonblaster.html",2],["Net.Attack","clnetattack.html",16],["Neverending Legacy","clneverendinglegacy.html",11],["Nextdoor","clnextdoor.html",17],["Nightcat Survival","clnightcatsurvival.html",1],["Nightclub Showdown","clnightclubshowdown.html",17],["Nimrods","clnimrods.html",11],["Ninja Obby Parkour","clninjaobbyparkor.html",6],["Noob Miner","clnoobminer.html",8],["Not Your Pawn","clnotyourpawn.html",7],["Nubby’s Number Factory","clnubbysnumberfactory.html",8],["Nuts and Bolts Screwing Puzzle","clNutsandBoltsScrewingPuzzle.html",7],["Obby 99% Will Lose","clobby-99-will-lose.html",6],["Obby But You’re On a Bike","clobbybike.html",4],["Obby Cart","clobbycart.html",6],["Obby For Lumber","cllumberobby.html",6],["Obby Rainbow Tower","clobbyrainbowtower.html",6],["Obby Robby - Only Up","clobbyonlyup.html",6],["Obby Slide","clobbyslide.html",7],["Obby Swing","clobbyswing.html",6],["Obby Yard Sale","clobbyyardsale.html",6],["Obby: +1 Jump per Click","clobby1jumpperclick.html",6],["Odd Bot Out","cloddbotout.html",7],["Offline Paradise","clofflineparadise.html",17],["Oh Flip!","clohflip.html",7],["Omega Layers","clomegalayers.html",8],["Omega Nugget Clicker","clomeganuggetclicker.html",8],["One Night As Freddy","clonenightasfreddy.html",1],["Onebit Adventure","clonebitadventure.html",11],["Oneshot (old)","cloneshotold.html",11],["Only Up","clonlyup.html",6],["Operius","cloperius.html",17],["Opposite Day","cloppositeday.html",17],["Orb of Creation","clorbofcreation.html",8],["osu!","closu.html",0],["Other Car Driving Simulator","clucds.html",9],["OutHold","clouthold.html",10],["OverBurden","cloverburden.html",10],["OVO","clovofixed.html",6],["OVO 3 Dimensions","clovodimensions.html",6],["Paper.io","clpaperio.html",14],["Paper.io 3D","clpaperio3d.html",14],["Paper.io Mania","clpaperiomania.html",14],["Parking Fury","clparkingfury.html",4],["Parking Fury 2","clparkingfury2.html",4],["Parking Fury 3","clparkingfury3.html",4],["Parking Rush","clparkingrush.html",4],["Penguin Diner","clpenguindiner.html",9],["Pereelous","clpereelous.html",17],["Perfect Hotel","clperfecthotel.html",9],["Pet World","clpetworld.html",9],["Phasma","clphasma.html",1],["Pico Driller","clpicodriller.html",8],["Pico Hot","clpicohot.html",0],["Pico Life","clpicolife.html",9],["Pico Night Punkin","clpiconightpunkin.html",0],["Pieces of Cake","clpiecesofcake.html",7],["Ping Pong Chaos","clpingpongchaos.html",5],["Pinkbike","clpinkbike.html",4],["Pixel Battlegrounds.io","clpixelbattlegroundsio.html",2],["Pixel Combat 2","clpixelcombat2.html",16],["Pixel Gun","clpixelgun.html",2],["Pixel Shooter","clpixelshooter.html",2],["Pixel Warfare","clpixelwarfare.html",2],["Pizza Tower","clpizzatower.html",6],["Planet Life","clplanetlife.html",9],["Plangman","clplangman.html",7],["Plants vs Zombies Modded","clPVZM.html",1],["Plinko","clplinko.html",12],["Plonky","clplonky.html",15],["Pogo 3D","clpogo3D.html",6],["Pokemon Academy Life: Forever!","clpokeacademylifeforever.html",11],["PokéPath TD","clpokepath.html",10],["Police Pursuit 2","clpolicepursuit2.html",16],["Poly Track","clpolytrackworksnow.html",4],["Pom Gets Wi-Fi","clpomgetsinternet.html",11],["Poor Bunny","clpoorbunny.html",17],["Porklike","clporklike.html",11],["Portal 2D","clportal2d.html",2],["Porter","clporter.html",17],["Possess Quest","clpossessquest.html",11],["Postal","clpostal.html",2],["Pou","clPou.html",9],["Praxis Fighter X","clpraxisfighterx.html",3],["Pretend It’s Not There","clpint.html",11],["Processor Tycoon","clprocessortycoon.html",8],["Pullfrog","clpullfrog.html",7],["Pumpkin Run 64","clpumpkinrun.html",6],["Puppet Hockey","clpuppethockey.html",5],["Puppet Master","clpuppetmaster.html",16],["Push Your Luck","clpushyourluck.html",10],["Quake III Arena","clquake3.html",2],["Quantum Clicker","clQuantumClicker.html",8],["R.E.P.O bad","clrepobad.html",1],["Ragdoll Archers","clragdollarchers.html",13],["Ragdoll Drop","clragdolldrop.html",13],["Ragdoll Hit","clragdollhit.html",13],["Ragdoll Runners","clragdollrunners.html",13],["Ragdoll Soccer","clragdollsoccer.html",13],["Raldi’s Crackhouse","clraldiscrackhouse.html",17],["Ravenbase","clravenbase.html",17],["Real Flight Simulator","clrealflightsim.html",9],["Recoil","clrecoil.html",2],["Red Ball 4","clRedBall4.html",15],["Red Handed","clredhanded.html",2],["Red Tie Runner","clredtierunner.html",6],["Red vs. Blue","clredvsblue2.html",16],["Red vs. Blue War","clredvsbluewar.html",10],["Resizer","clresizer.html",7],["Retro Bowl","clretrobowl.html",15],["Retro Bowl College","clretrobowlcollege.html",15],["Retro Highway","clretrohighway.html",15],["Retro Ping Pong","clretropingpong.html",15],["Return to Riddle School","clreturntoriddleschool.html",9],["Revolution Idle","clrevolutionidle.html",8],["Rhythm Hell","clrh.html",0],["Riddle Middle School","clriddlemiddleschool.html",9],["Rise Higher","clrisehigher.html",15],["Robby Blocks","clluckyblocks.html",7],["Rocket Goal.io","clrocketgoalio.html",5],["Rocket League","clrocketleague.html",5],["Rocket Soccer Derby","clrocketsoccerderby.html",5],["Rocketpult","clrocketpult.html",15],["Rodha","clrodha.html",17],["Roller Baller","clrollerballer.html",15],["Rolling Sky","clrollingsky.html",15],["Rolly Vortex","clrollyvortex.html",15],["Rooftop Run","clrooftoprun.html",6],["Rooftop Snipers","clrooftopsnipers.html",2],["Rooftop Snipers 2","clrooftopsnipers2.html",2],["Room Clicker","clroomclicker.html",8],["Roulette Hero","clroulettehero.html",12],["Roulette Knight","clrouletteknight.html",12],["Run 3","clrun3.html",6],["Running Fred","clrunningfred.html",6],["Russian Buckshot Roulette","clrussianbuckshot.html",1],["Russian Car Driver","clrussiancardriver.html",4],["Russian CS GO-6","clcs6.html",2],["Russian Sandbox","clrussiansandbox.html",13],["Saihate Station","clsaihatestation.html",11],["Sandboxels","clsandboxels.html",13],["Sandtris","clsandtris.html",7],["Santy","clsanty.html",17],["Satryn","clsatryn.html",17],["Saul Goodman Run","clsaulgoodmanrun.html",6],["Sausage Flip","clsausageflip.html",15],["Scale The Depths","clscalethedepths.html",11],["Scarlet Shift","clscarletshift.html",7],["Scary Shawarma","clscaryshawarma.html",1],["Scary Teacher 3D","clscaryteacher3d.html",1],["Schoolboy Runaway","clschoolboyrunaway.html",9],["Scrap Metal 3","clscrapmetal3.html",16],["Scuba Bear","clscubabear.html",9],["Sea Mongrel","clseamongrel.html",17],["Self","clself.html",17],["Serenitrove","clserenitrove.html",4],["Seven Days In Purgatory","clsevendays.html",1],["Shadow Courier","clshadowcourier.html",16],["Shape Transform","clshapetransform.html",7],["Shift","clshift.html",7],["Shift 2","clshift2.html",7],["Shift at Midnight","clshiftatmidnight.html",7],["Short Life","clshortlife.html",9],["Shot Out 4","clshotout4.html",2],["Shredmill","clshredmill.html",7],["Shredsauce","clshredsauce.html",15],["Side Effects","clsideeffects.html",17],["Silhouette Showdown","clsiloshowdow.html",3],["Silk Melody","clsilkmelody.html",0],["Six ways to die","clsixwaystodie.html",1],["Skibidi in the Backrooms","clskibidiinthebackrooms.html",1],["Skibidi Shooter","clskibidishooter.html",2],["Skibidi toilet.io","clskibididibidygyattohiorizzingallovertheplacestillwatermangotheoryfemboydrool.html",14],["Skinwalker","clskinwalker.html",1],["Sky Race 3D","clskyrace-3d.html",4],["Sky Riders","clSkyRiders.html",15],["Slenderman: The 8 Pages","clslenderman.html",1],["Slendy Tubbies","clslendytubbies.html",1],["Slice It All","clsliceitall.html",15],["Slide in the Woods","clslideinthewoods.html",7],["Slipways","clslipways.html",10],["Slither.io","clslitherio.html",15],["Slope","clslopeplus.html",15],["Slope 2 player","clslope2player.html",14],["Slope 3","clslope3.html",15],["Slot or Not","clslotornot.html",12],["Slow Roads","clslowroads.html",4],["Smash Karts","clsmashkartsworking.html",4],["Snakelike","clsnakelike.html",15],["Sniper Shot","clsnipershot.html",2],["Sniper v2","clsniperv2.html",2],["Snow Rider 3D","clsnowrider.html",4],["Snow Road","clsnowroad.html",4],["Snowball.io","clsnowballio.html",15],["Snowboard Obby","clsnowboardobby.html",5],["Soccer Bros","clsoccerbros.html",5],["Soccer Random","clsoccerrandomgood.html",5],["Soda Simulator","clsodasimulator.html",9],["Solar Sandbox","clsolarsandbox.html",13],["Solar Smash","clsolarsmash.html",13],["Sonic 1 Mobile","clsonic1mobile.html",6],["Sonic 2 Mobile","clsonic2mobile.html",6],["Sonic And The Falling Star","clsonicandfallingstar.html",6],["Sonic CD","clsoniccdmobile.html",6],["Sonic Mania Plus","clsonicmaniaplus.html",6],["Sonic Revert","clsonicrevert.html",6],["Sonic.EXE Original","clsoniceexeog.html",6],["Sort The Court","clsortthecourt.html",7],["Soul Jumper","clsouljumper.html",6],["Space Company","clspacecompany.html",8],["Space Wars BattleGround","clspacewarsbattleground.html",2],["Space Waves","clspacewaves.html",15],["Spacebar Clicker","clspacebarclicker.html",8],["Speed Per Click","clspeedperclick.html",4],["Speed Stars","clspeedstars.html",4],["Spelunky Classic HD","clspelunky.html",6],["Spiral Roll","clspiralroll.html",15],["Sprinter","clsprinter.html",6],["Sprunked","clsprunked.html",0],["Sprunki","clsprunki.html",0],["Sprunki Clicker","clsprunkiclicker.html",8],["Squid Playground","clsquidplayground.html",14],["Stackball.io","clstackballio.html",15],["Stacktris","clstacktris.html",7],["State.io","clstateio.html",10],["Station 141","clstation141.html",10],["Station Meltdown","clstationmeltdown.html",15],["Station Saturn","clstationsaturn.html",15],["Steal A Brainrot","clsupitdept.html",7],["Stealth Master","clstealthmaster.html",16],["Steel Surge Revolution","clsteelsurge.html",8],["Steep Descent","clsteepdescent.html",5],["Stick Archers Battle","clstickarchersbattle.html",3],["Stick Defenders","clstickdefenders.html",15],["Stick Fighter","clstickfighter.html",3],["Stick Merge","clstickmerge.html",3],["Stick Slasher","clstickslasher.html",3],["Stick With It","clstickwithit.html",3],["Stickjet Challenge","clstickjetchallenge.html",3],["Stickman and Guns","clstickmanandguns.html",3],["Stickman Clash","clstickmanclash.html",3],["Stickman Duel","clstickmanduel.html",3],["Stickman gta City","clstickmangtacity.html",3],["Stickman Hook","clstickmanhook.html",3],["Stickman Kingdom Clash","clStickmanKingdomclash.html",10],["Stickman Kombat 2D","clstickmankombat2d.html",3],["Stone Grass Mowing Simulator","clgrassmowing.html",9],["Strikeforce Kitty","clsfk.html",16],["Strikeforce Kitty 2","clsfk2.html",16],["Strikeforce Kitty Last Stand","clsfklaststand.html",16],["Strikeforce Kitty League","clsfkleague.html",16],["Striker Dummies","clstrikerdummies.html",16],["Subway Surfers: Barcelona","clsubwaysurfersbarcelona.html",4],["Subway Surfers: Beijing","clsubwaysurfersbeijing.html",4],["Subway Surfers: Berlin","clsubwaysurfersberlin.html",4],["Subway Surfers: Bueno aires","clsubwaysurfersbuenosaires.html",4],["Subway Surfers: Havana","clsubwaysurfershavana.html",4],["Subway Surfers: Houston","clsubwaysurfershouston.html",4],["Subway Surfers: Iceland","clsubwaysurfersiceland.html",4],["Subway Surfers: London","clsubwaysurferslondon.html",4],["Subway Surfers: Mexico","clsubwaysurfersmexico.html",4],["Subway Surfers: Miami","clsubwaysurfersmiami.html",4],["Subway Surfers: Monaco","clsubwaysurfersmonaco.html",4],["Subway Surfers: New orleans","clsubwaysurfersneworeleans.html",4],["Subway surfers: San francisco","clsubwaysurferssanfrancisco (1).html",4],["Subway surfers: St. petersburg","clsubwaysurfersstpetersburg.html",4],["Subway surfers: Winter holiday","clsubwaysurferswinterholiday.html",4],["Subway surfers: Zurich","clsubwaysurferszurich.html",4],["Suika Game","clsuika.html",7],["Suika Pico","clsuikapico.html",7],["Summer Rider 3D","clsummerrider.html",4],["Super Car Rush","clsupercarrush.html",4],["Super Dark Deception","clsuperdarkdeception.html",1],["Super Drome Bugs","clsuperdromebugs.html",15],["Super Falling Fred","clsuperfallingfred.html",6],["Super Liquid Soccer","clsuperliquidsoccer.html",5],["Super Mario 63 Redux","clsm63redux.html",6],["Super Mario 64 (webgl)","clmario64webgl.html",6],["Super Mario Bros","clsupermariobros.html",6],["Super Mario Bros. Remastered","clsmbremastered.html",6],["Super Mario Construct","clsmc.html",6],["Super Momos Crushers","clmomoscrushers.html",16],["Super Monkey Ball 1 & 2","clsmb12.html",15],["Super Oliver World","clsuperoliverworld.html",6],["Super Onion Boy 2","clsuperonionboy2.html",6],["Super Pickleball Adventure","clsuperpickleballadventure.html",11],["Super Santa Kicker","clsupersantakicker.html",15],["Super Santa Kicker 2","clsupersantakicker2.html",15],["Supercold","clsupercold.html",17],["Superhot","clsuperhot.html",2],["Superhot Line Miami","clsuperhotlinemiami.html",2],["Supreme Duelist","clsupremeduelist.html",3],["Supreme Duelist 2019","clSupremeDuelist2019.html",3],["Survival Race v2","clsurvivalracev2.html",1],["Survivor.io","clsurvivorio.html",14],["Sushi Unroll","clsushiunroll.html",7],["Switchblade","clswitchblade.html",16],["Swordfight","clswordfight.html",16],["Table Tanks","cltabletanks.html",2],["Table Tennis World Tour","cltabletennisworldtour.html",5],["Taco Stand","cltacostand.html",9],["Tag","cltag-.html",14],["Tag (coolmathgames)","cltagcm.html",14],["Tail of The Dragon","cltailofthedragon.html",17],["Taisei Project","cltaisei.html",17],["Tall.io","cltallio.html",14],["Tank Pixel","cltankpixel.html",2],["Tanuki Sunset","cltanukisunset.html",4],["Tap Road","cltaproad.html",15],["Telephone Trouble","cltelephonetrouble.html",17],["Temple Run 2","cltemplerun2.html",6],["TEMPOVERDOSE","cltempoverdose.html",17],["Terra","clterra.html",13],["Territorial.io","clterritorialio.html",10],["The Deadseat","clthedeadseat.html",1],["The Dude","clthedude.html",11],["The End Of Disney","clteod.html",1],["The Man From The Window","clthemaninthewindow.html",1],["The Sun and Moon","clsunandmoon.html",7],["The Visitor","clvisitor.html",7],["There is No Game","clthereisnofile.html",7],["Thermomorph","clthermomorph.html",7],["They Are Coming","cltheyarecoming.html",1],["Three Goblets","clthreegoblets.html",7],["Throw a Potato","clthrowapotato.html",17],["Throw a Potato Again","clthrowapotatoagain.html",17],["Thwack","clthwack.html",3],["Time Shooter 2","cltimeshooter2.html",2],["Time Shooter 3","cltimeshooter3.html",2],["Timewarriors","cltimewarriors.html",2],["Tiny Fishing","cltinyfishing.html",5],["To a Starling","cltoastarling.html",11],["Toasterball","cltoasterball.html",5],["Tomb of the Mask","cltotm.html",15],["Tomorrow And Yesterday","cltommorowandyesterday.html",17],["Top Speed Racing 3D","cltopspeedracing3d.html",4],["Tower Blocks","cltowerblocks.html",7],["Tower Crash 3D","cltowercrash3d.html",15],["Tower Wizard","cltowerwizard.html",10],["Townscraper","cltownscraper.html",13],["Trace","cltrace.html",7],["Traffic Jam 3D","cltrafficjam3d.html",4],["Tralalero Tralala Escape Tung Tung Tung Sahur","cltralalerotralalaescapetungtungtungsahur.html",16],["Trap The Cat","cltrapthecat.html",7],["Trapped With Jester","cltrappedwithjester.html",1],["Treacherous Trials","cltrechoroustrials.html",6],["Treacherous Trials Part 2","cltrechoroustrialspart2.html",6],["Triachnid","cltriachnid.html",15],["Trivia Crack","cltriviacrack.html",14],["Tube Jumpers","cltubejumpers.html",14],["Tung Sahur Horror","cltungtunghorror.html",1],["Tung Tung Tung Sahur Obby","cltungtungtungsahurobby.html",6],["Tunnel Rush","cltunnelrush.html",4],["Two Ball 3D","cltwoball3d.html",15],["Ufo Swamp Odyssey","clufoswampoddysey.html",15],["Ultimate Car Driving Simulator","clUltimatecardrivingsimulator.html",9],["Ultrakill (buggy)","clultrakill.html",2],["Uncanny Cat Golf","cluncannycatgolf.html",5],["Underneath","clunderneath.html",1],["Undertale Yellow","clundertaleyellow.html",11],["Undertale: Last Breath","clundertalelb.html",11],["Unfair Undyne","clunfairundyne.html",11],["Unicycle Hero","clunicyclehero.html",5],["Unitres Dreams","clunitresdreams.html",7],["Uno","cluno.html",12],["Untime","cluntime.html",17],["UpSlash","clupslash.html",16],["UZG","clUZG.html",17],["Vampire Survivors","clvampiresurvivors.html",1],["Vapor Trails","clvaportrails.html",15],["Vex 3","clvex3.html",6],["Vex 3 Xmas","clvex3xmas.html",6],["Vex 4","clvex4.html",6],["Vex 5","clvex5.html",6],["Vex 6","clvex6.html",6],["Vex 7","clvex7.html",6],["Vex 8","clvex8.html",6],["Vex Challenges","clvexchallenges.html",6],["Vex x3m","clvexx3m.html",6],["Vex x3m 2","clvexx3m2.html",6],["Villager","clvillager.html",9],["Vincent Mansion Of The Dead","clvincentmansionofthedead.html",1],["Volley Random","clvolleyrandom.html",5],["Volleyball Challenge","clvollyballchallenge.html",5],["Vortex","clvortex.html",15],["War the Knight","clwartheknight.html",10],["Waterpool.io","clwaterpoolio.html",14],["Waterworks","clwaterworks.html",7],["Wave Dash","clwavedash.html",16],["Wave Run","clwaverun.html",6],["We Become What We Behold","clwebecomewhatwebehold.html",11],["Webfishing","clwebfishing.html",5],["Wermhole","clwermhole.html",15],["Wheelie Bike","clwheeliebike.html",4],["Winter Falling","clwinterfalling.html",11],["Witchcraft td","clwitchcrafttd.html",13],["Wolfenstein 3D Emscripten","clwolfenstein.html",2],["Woodworm","clwoodworm.html",7],["Wordle","clwordle.html",7],["Wrassling","clwrassling.html",3],["Wrestle Bros","clwrestlebros.html",3],["Yandere Simulator","clyanderesimulator.html",9],["Yohoho.io","clyohohoio.html",14],["You vs. 100 Skibidi","clyouvs100skibidi.html",14],["Your Turn To Die","clyourturntodie.html",11],["Yume Nikki","clyumenikki.html",11],["Zen Word","clzenword.html",7],["Zombie Road","clzombieroad.html",1],["Zombie Rush","clzombierush.html",1],["Zombotron Reboot","clzombotronreboot.html",16],["Zrist","clzrist.html",15],["Öoo","clÖoo.html",17],["ʘ","clʘ.html",17]];
+
+/* ---------------------------------------------------------------- state */
+const CDN   = "https://cdn.jsdelivr.net/npm/ugs-singlefiles@1.0.6/UGS-Files/";
+const MIRROR = "https://raw.githack.com/mcgee1717/994894838923761723/master/UGS-Files/";
+
+const TINTS = ["#e8ddc9","#e2d7c3","#eee5d5","#dcd2bf","#e9dfcd","#e5d9c4","#e0d7c8","#ebe1d0"];
+const PAGE = 96;
+
+const state = { q: "", cat: -1, shown: 0, list: [] };
+
+const el = {
+  grid: document.getElementById("grid"),
+  cats: document.getElementById("cats"),
+  q: document.getElementById("q"),
+  more: document.getElementById("more"),
+  empty: document.getElementById("empty"),
+  ledeTitle: document.getElementById("ledeTitle"),
+  ledeCount: document.getElementById("ledeCount"),
+  ledeHint: document.getElementById("ledeHint"),
+  player: document.getElementById("player"),
+  stage: document.getElementById("stage"),
+  pName: document.getElementById("pName"),
+  pCat: document.getElementById("pCat"),
+  back: document.getElementById("back"),
+  reload: document.getElementById("reload"),
+  full: document.getElementById("full"),
+  newtab: document.getElementById("newtab"),
+  brandSub: document.getElementById("brandSub")
+};
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const initials = n => {
+  const words = n.replace(/[^A-Za-z0-9 ]/g, " ").split(/\s+/).filter(Boolean);
+  if (!words.length) return "?";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
+};
+const tint = n => {
+  let h = 0;
+  for (let i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) >>> 0;
+  return TINTS[h % TINTS.length];
+};
+
+/* ---------------------------------------------------------------- cover art
+   Every game gets its own poster, derived deterministically from its name so
+   it never changes between visits. Purely local vector art: no network, no
+   broken thumbnails. If a game ever ships a real cover URL, it is used instead. */
+const PALETTES = [
+  ["#ece0c9", "#cfb994", "#8b7a60"],
+  ["#e2e3d7", "#bcc3ae", "#6f7a63"],
+  ["#e5dde2", "#c2b0ba", "#7d6a76"],
+  ["#dde2e5", "#b0c0c8", "#66747d"],
+  ["#efe2d3", "#d6b69e", "#8d6d57"],
+  ["#e9e3d0", "#cbbf94", "#7c7452"],
+  ["#e3dfd5", "#bcb6a7", "#77715f"],
+  ["#ebe0dc", "#cca9a2", "#85675f"]
+];
+
+function hashStr(s) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function rng(seed) {
+  return function () {
+    seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function poster(name) {
+  const seed = hashStr(name);
+  const r = rng(seed);
+  const pal = PALETTES[seed % PALETTES.length];
+  const [bg1, bg2, accent] = pal;
+  const motif = seed % 8;
+  const rot = Math.floor(r() * 4) * 90;
+  const shapes = [];
+  const ink = "#26231f";
+
+  if (motif === 0) {
+    const cx = 18 + r() * 20, cy = 12 + r() * 20;
+    shapes.push(`<circle cx="${cx}" cy="${cy}" r="26" fill="none" stroke="${accent}" stroke-opacity=".38" stroke-width="7"/>`);
+    shapes.push(`<circle cx="${cx + 34}" cy="${cy + 26}" r="17" fill="${ink}" fill-opacity=".07"/>`);
+  } else if (motif === 1) {
+    for (let i = -2; i < 9; i++) {
+      shapes.push(`<rect x="${i * 14}" y="-20" width="5" height="120" fill="${accent}" fill-opacity=".26" transform="rotate(22 50 31)"/>`);
+    }
+  } else if (motif === 2) {
+    shapes.push(`<path d="M0 63 A63 63 0 0 1 63 0 L0 0 Z" fill="${accent}" fill-opacity=".2"/>`);
+    shapes.push(`<path d="M100 63 A45 45 0 0 1 55 63 Z" fill="${ink}" fill-opacity=".09"/>`);
+  } else if (motif === 3) {
+    for (let y = 8; y < 64; y += 12) for (let x = 8; x < 100; x += 12) {
+      shapes.push(`<circle cx="${x}" cy="${y}" r="1.9" fill="${accent}" fill-opacity=".45"/>`);
+    }
+  } else if (motif === 4) {
+    shapes.push(`<path d="M50 4 L86 58 L14 58 Z" fill="none" stroke="${accent}" stroke-opacity=".42" stroke-width="2.5"/>`);
+    shapes.push(`<path d="M50 24 L70 56 L30 56 Z" fill="${ink}" fill-opacity=".1"/>`);
+  } else if (motif === 5) {
+    const bars = 4 + Math.floor(r() * 3);
+    for (let i = 0; i < bars; i++) {
+      const h = 16 + r() * 40;
+      shapes.push(`<rect x="${12 + i * (76 / bars)}" y="${62 - h}" width="${76 / bars - 6}" height="${h}" rx="2" fill="${accent}" fill-opacity=".3"/>`);
+    }
+  } else if (motif === 6) {
+    shapes.push(`<circle cx="50" cy="31" r="22" fill="none" stroke="${accent}" stroke-opacity=".4" stroke-width="2"/>`);
+    shapes.push(`<line x1="18" y1="31" x2="82" y2="31" stroke="${ink}" stroke-opacity=".16" stroke-width="2"/>`);
+    shapes.push(`<line x1="50" y1="6" x2="50" y2="56" stroke="${ink}" stroke-opacity=".16" stroke-width="2"/>`);
+  } else {
+    for (let i = 0; i < 3; i++) {
+      shapes.push(`<path d="M-5 ${20 + i * 13} q26 -14 52 0 t58 0" fill="none" stroke="${accent}" stroke-opacity=".38" stroke-width="2.5"/>`);
+    }
+  }
+
+  return `<svg viewBox="0 0 100 63" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <defs><linearGradient id="g${seed}" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="${bg1}"/><stop offset="1" stop-color="${bg2}"/>
+    </linearGradient></defs>
+    <rect width="100" height="63" fill="url(#g${seed})"/>
+    <g transform="rotate(${rot} 50 31)">${shapes.join("")}</g>
+    <text class="mono" x="50" y="31" text-anchor="middle" dominant-baseline="central">${esc(initials(name))}</text>
+  </svg>`;
+}
+
+function cover(g) {
+  if (g[3]) {
+    return `<img src="${esc(g[3])}" alt="" loading="lazy" decoding="async">`;
+  }
+  return poster(g[0]);
+}
+const gameUrl = f => CDN + encodeURIComponent(f);
+const mirrorUrl = f => MIRROR + encodeURIComponent(f);
+
+/* ---------------------------------------------------------------- categories */
+function buildCats() {
+  const counts = CATS.map(() => 0);
+  for (const g of GAMES) counts[g[2]]++;
+
+  const all = document.createElement("button");
+  all.className = "chip";
+  all.innerHTML = `All <span class="n">${GAMES.length.toLocaleString()}</span>`;
+  all.dataset.cat = "-1";
+  all.setAttribute("aria-pressed", "true");
+  el.cats.appendChild(all);
+
+  CATS.forEach((cat, i) => {
+    const b = document.createElement("button");
+    b.className = "chip";
+    b.innerHTML = `${esc(cat)} <span class="n">${counts[i].toLocaleString()}</span>`;
+    b.dataset.cat = String(i);
+    b.setAttribute("aria-pressed", "false");
+    el.cats.appendChild(b);
+  });
+
+  el.cats.addEventListener("click", e => {
+    const chip = e.target.closest(".chip");
+    if (!chip) return;
+    state.cat = Number(chip.dataset.cat);
+    for (const c of el.cats.children) c.setAttribute("aria-pressed", String(c === chip));
+    apply();
+    chip.scrollIntoView?.({ block: "nearest", inline: "center", behavior: "smooth" });
+  });
+}
+
+/* ---------------------------------------------------------------- filtering */
+function apply() {
+  const q = state.q.trim().toLowerCase();
+  const cat = state.cat;
+  const out = [];
+
+  for (const g of GAMES) {
+    if (cat >= 0 && g[2] !== cat) continue;
+    if (q) {
+      const hay = (g[0] + " " + g[1] + " " + CATS[g[2]]).toLowerCase();
+      if (!hay.includes(q)) continue;
+    }
+    out.push(g);
+  }
+
+  if (q) {
+    out.sort((a, b) => {
+      const an = a[0].toLowerCase(), bn = b[0].toLowerCase();
+      const ap = an.startsWith(q) ? 0 : an.includes(q) ? 1 : 2;
+      const bp = bn.startsWith(q) ? 0 : bn.includes(q) ? 1 : 2;
+      if (ap !== bp) return ap - bp;
+      return an.length - bn.length || an.localeCompare(bn);
+    });
+  }
+
+  state.list = out;
+  state.shown = 0;
+  el.grid.innerHTML = "";
+  el.empty.hidden = out.length > 0;
+
+  const label = cat >= 0 ? CATS[cat] : "All games";
+  el.ledeTitle.innerHTML = `${esc(label)} <em id="ledeCount"></em>`;
+  el.ledeCount = document.getElementById("ledeCount");
+
+  renderMore();
+}
+
+function renderMore() {
+  const total = state.list.length;
+  const next = Math.min(state.shown + PAGE, total);
+
+  const frag = document.createDocumentFragment();
+  for (let i = state.shown; i < next; i++) {
+    const g = state.list[i];
+    const card = document.createElement("button");
+    card.className = "card";
+    card.type = "button";
+    card.title = g[0];
+    card.dataset.i = String(i);
+    card.innerHTML =
+      `<span class="thumb" style="--tint:${tint(g[0])}">${cover(g)}</span>
+       <span class="card-body">
+         <span class="name">${esc(g[0])}</span>
+         <span class="tag">${esc(CATS[g[2]])}</span>
+       </span>
+       <span class="play" aria-hidden="true">
+         <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+       </span>`;
+    frag.appendChild(card);
+  }
+  el.grid.appendChild(frag);
+  state.shown = next;
+
+  const remaining = total - next;
+  el.more.hidden = remaining <= 0;
+  if (remaining > 0) el.more.textContent = `Load ${Math.min(PAGE, remaining)} more · ${remaining.toLocaleString()} left`;
+
+  const shownLabel = total === 0
+    ? ""
+    : state.shown === total
+      ? `${total.toLocaleString()} ${total === 1 ? "game" : "games"}`
+      : `${state.shown.toLocaleString()} of ${total.toLocaleString()} games`;
+  if (el.ledeCount) el.ledeCount.textContent = shownLabel ? `— ${shownLabel}` : "";
+  el.ledeHint.textContent = state.q.trim() ? "Results ranked by name" : "Pick a game — it opens right here";
+}
+
+/* ---------------------------------------------------------------- player */
+let current = null;
+let loadTimer = null;
+
+function teardown() {
+  clearTimeout(loadTimer);
+  for (const f of el.stage.querySelectorAll("iframe")) f.remove();
+}
+
+function showLoader(message) {
+  const html = message || `<div class="spinner"></div><div>Loading game…</div>`;
+  const box = document.createElement("div");
+  box.className = "loader";
+  box.innerHTML = message
+    ? `<div class="err">${message}</div>`
+    : `<div class="spinner"></div><div>Loading game…</div>`;
+  el.stage.querySelectorAll(".loader").forEach(n => n.remove());
+  el.stage.appendChild(box);
+  return box;
+}
+
+function hideLoader() {
+  el.stage.querySelectorAll(".loader").forEach(n => n.remove());
+}
+
+async function openGame(index) {
+  const g = state.list[index];
+  if (!g) return;
+  current = g;
+
+  el.pName.textContent = g[0];
+  el.pCat.textContent = CATS[g[2]];
+  el.player.classList.add("open");
+  document.body.classList.add("locked");
+  el.back.focus({ preventScroll: true });
+
+  teardown();
+  const loader = showLoader();
+  const iframe = document.createElement("iframe");
+  iframe.setAttribute("allow", "fullscreen; autoplay; gamepad; clipboard-read; clipboard-write");
+  iframe.setAttribute("allowfullscreen", "");
+  iframe.referrerPolicy = "no-referrer-when-downgrade";
+  iframe.title = g[0];
+
+  iframe.addEventListener("load", () => {
+    clearTimeout(loadTimer);
+    iframe.classList.add("ready");
+    loader.hidden = true;
+  });
+
+  el.stage.appendChild(iframe);
+
+  // Prefer the copy served as real HTML (mirror keeps relative asset paths
+  // working), then fall back to the CDN blob if the mirror is unreachable.
+  let started = false;
+  const tryMirror = () => {
+    started = true;
+    iframe.src = mirrorUrl(g[1]);
+  };
+
+  loadTimer = setTimeout(async () => {
+    if (iframe.classList.contains("ready")) return;
+    await loadFromCdn(iframe, g, loader, tryMirror);
+  }, 7000);
+
+  tryMirror();
+}
+
+async function loadFromCdn(iframe, g, loader, retryMirror) {
+  try {
+    const res = await fetch(gameUrl(g[1]), { cache: "force-cache" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const text = await res.text();
+    const blob = new Blob([text], { type: "text/html" });
+    iframe.removeAttribute("src");
+    iframe.srcdoc = "";
+    iframe.src = URL.createObjectURL(blob);
+  } catch (err) {
+    loader.innerHTML = `<div class="err">
+      <strong>This one didn't load.</strong><br>
+      The game file could not be reached right now — usually a network blocker,
+      a school filter, or a temporary CDN hiccup.<br><br>
+      <span class="row">
+        <a href="${esc(mirrorUrl(g[1]))}" target="_blank" rel="noopener">Open in a new tab</a>
+        <a href="${esc(gameUrl(g[1]))}" target="_blank" rel="noopener">Direct file</a>
+      </span>
+    </div>`;
+  }
+}
+
+function closeGame() {
+  teardown();
+  current = null;
+  el.player.classList.remove("open");
+  document.body.classList.remove("locked");
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+}
+
+/* ---------------------------------------------------------------- wiring */
+el.grid.addEventListener("click", e => {
+  const card = e.target.closest(".card");
+  if (card) openGame(Number(card.dataset.i));
+});
+
+el.more.addEventListener("click", renderMore);
+el.back.addEventListener("click", closeGame);
+el.reload.addEventListener("click", () => { if (current) openGame(state.list.indexOf(current)); });
+el.newtab.addEventListener("click", () => {
+  if (current) window.open(mirrorUrl(current[1]), "_blank", "noopener");
+});
+el.full.addEventListener("click", () => {
+  if (!document.fullscreenElement) el.player.requestFullscreen?.().catch(() => {});
+  else document.exitFullscreen().catch(() => {});
+});
+
+let debounce;
+el.q.addEventListener("input", () => {
+  clearTimeout(debounce);
+  debounce = setTimeout(() => { state.q = el.q.value; apply(); }, 120);
+});
+el.q.addEventListener("keydown", e => {
+  if (e.key === "Enter") { state.q = el.q.value; apply(); }
+  if (e.key === "Escape") { el.q.value = ""; state.q = ""; apply(); el.q.blur(); }
+});
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && el.player.classList.contains("open")) { closeGame(); return; }
+  if ((e.key === "/" || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k"))
+      && document.activeElement !== el.q) {
+    e.preventDefault();
+    el.q.focus();
+    el.q.select();
+  }
+});
+
+// infinite-ish loading once the button scrolls into view
+const io = new IntersectionObserver(entries => {
+  for (const entry of entries) {
+    if (entry.isIntersecting && !el.more.hidden) renderMore();
+  }
+}, { rootMargin: "600px 0px" });
+io.observe(el.more);
+
+el.brandSub.textContent = `${GAMES.length.toLocaleString()} games · ${CATS.length} categories`;
+buildCats();
+apply();
+</script>
+</body>
+</html>
